@@ -1,0 +1,3 @@
+- String can be converted to char array: s.toCharArray()
+- any char is inter-changeable with an int
+- char-127 can be an index of the char-array and be counted

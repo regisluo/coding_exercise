@@ -1,13 +1,13 @@
 package basic_ds.queueu.ds;
 
-public class AQueue {
+public class ArrayQueue {
     int[] data;
     int size;
     int length;
     int head = -1;
     int rear = 0;
 
-    public AQueue(int length) {
+    public ArrayQueue(int length) {
         this.length = length;
         this.size = 0;
         this.head = -1;
@@ -19,8 +19,12 @@ public class AQueue {
             throw new Exception("Queue is full");
         }
         this.data[this.rear] = v;
-        this.rear = (this.rear + 1) % this.length;
+        this.rear = nextIndex(this.rear);
         this.size++;
+    }
+
+    private int nextIndex(int i) {
+        return i<this.length-1?i+1:0;
     }
 
     public int deQueue() throws Exception {
@@ -29,7 +33,7 @@ public class AQueue {
         }
         int ans = this.data[this.head];
         this.size--;
-        this.head = (this.head + 1) % this.length;
+        this.head = nextIndex(this.head);
         return ans;
     }
 
