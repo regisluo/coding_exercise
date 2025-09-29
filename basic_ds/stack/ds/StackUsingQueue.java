@@ -10,32 +10,36 @@ public class StackUsingQueue<T> {
     Queue<T> helpQueue = new ArrayDeque<>();
 
     public void push(T v) {
-        // always push new element into helpQueue
-        helpQueue.offer(v);
-        // copy all elements in dataQueue into helpQueue
-        while (!dataQueue.isEmpty()) {
-            helpQueue.offer(dataQueue.poll());
-        }
-        // swap the two queues
-        Queue<T> tmp = dataQueue;
-        dataQueue = helpQueue;
-        helpQueue = tmp;
+        dataQueue.offer(v);
     }
 
     public T pop() throws Exception {
         if (dataQueue.isEmpty())
             throw new Exception("Stack is empty");
-        return this.dataQueue.poll();
+        while (dataQueue.size() > 1) {
+            helpQueue.offer(dataQueue.poll());
+        }
+        T ret = dataQueue.poll();
+        // swap the two queues
+        Queue<T> tmp = dataQueue;
+        dataQueue = helpQueue;
+        helpQueue = tmp;
+        return ret;
     }
 
-    public T top() throws Exception {
+    public T peek() throws Exception {
         if (dataQueue.isEmpty())
             throw new Exception("Stack is empty");
-        return this.dataQueue.peek();
-    }
-
-    public boolean isEmpty() {
-        return this.dataQueue.isEmpty();
+        while (dataQueue.size() > 1) {
+            helpQueue.offer(dataQueue.poll());
+        }
+        T ret = dataQueue.poll();
+        helpQueue.offer(ret);
+        // swap the two queues
+        Queue<T> tmp = dataQueue;
+        dataQueue = helpQueue;
+        helpQueue = tmp;
+        return ret;
     }
 
 }

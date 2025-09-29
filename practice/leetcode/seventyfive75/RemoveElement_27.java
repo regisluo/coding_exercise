@@ -1,4 +1,4 @@
-package practice.leet.arranAndString;
+package practice.leetcode.seventyfive75;
 
 public class RemoveElement_27 {
     public int removeElement(int[] nums, int val) {

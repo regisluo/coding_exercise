@@ -31,7 +31,7 @@ public class ArrayStack {
     }
 
     // add element v into the Stack, return
-    public void add(int v) throws Exception {
+    public void push(int v) throws Exception {
         if(this.size == this.capacity) {
             throw new Exception("Stack is full");
         }

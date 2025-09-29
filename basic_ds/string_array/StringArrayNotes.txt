@@ -1,3 +1,33 @@
 - String can be converted to char array: s.toCharArray()
 - any char is inter-changeable with an int
-- char-127 can be an index of the char-array and be counted
+- letter statistic: using a 128 size-char-array to count (0-127 ASCII)
+- String is immutable, so any operation on it creates a new String
+- StringBuilder is mutable, so it is more efficient for string manipulation
+- StringBuilder is not thread-safe, so it is less safe in multi-thread environment
+- StringBuffer is thread-safe, so it is more safe in multi-thread environment
+- StringBuffer is less efficient than StringBuilder
+- StringBuilder and StringBuffer have similar APIs
+- StringBuilder and StringBuffer have no length limit, only limited by memory
+- StringBuilder and StringBuffer have initial capacity of 16 characters, if exceeded, it will
+  double the capacity
+- StringBuilder and StringBuffer have method: append(), insert(), delete(), replace(), reverse()
+- StringBuilder and StringBuffer have method: toString() to convert to String
+- StringBuilder and StringBuffer have method: capacity() to get current capacity
+- StringBuilder and StringBuffer have method: ensureCapacity(int minimumCapacity) to ensure minimum capacity
+- StringBuilder and StringBuffer have method: setLength(int newLength) to set new length
+- StringBuilder and StringBuffer have method: charAt(int index) to get char at index
+- StringBuilder and StringBuffer have method: setCharAt(int index, char ch) to set char at index
+- StringBuilder and StringBuffer have method: substring(int start), substring(int start, int end) to get substring
+- StringBuilder and StringBuffer have method: indexOf(String str), indexOf(String str, int fromIndex) to get index of substring
+- StringBuilder and StringBuffer have method: lastIndexOf(String str), lastIndexOf(String str, int fromIndex) to get last index of substring
+- StringBuilder and StringBuffer have method: length() to get current length
+- StringBuilder and StringBuffer have method: trimToSize() to trim capacity to current length
+- StringBuilder and StringBuffer have method: reverse() to reverse the string
+- StringBuilder and StringBuffer have method: delete(int start, int end) to delete substring
+- StringBuilder and StringBuffer have method: deleteCharAt(int index) to delete char at index
+- StringBuilder and StringBuffer have method: insert(int offset, String str) to insert string at offset
+- StringBuilder and StringBuffer have method: append(String str) to append string at the end
+- StringBuilder and StringBuffer have method: replace(int start, int end, String str) to replace substring
+- StringBuilder and StringBuffer have method: clear() to clear the string
+- StringBuilder and StringBuffer have method: isEmpty() to check if empty
+- StringBuilder and StringBuffer have method: toString() to convert to String
