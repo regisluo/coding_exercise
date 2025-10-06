@@ -14,7 +14,7 @@ I'll move through four phases: domain understanding, strategic design with bound
 
 ---
 
-## Phase 1: Domain Understanding (5-7 minutes)
+## Phase 1: Domain Understanding (5-7 minutes) - concepts and bounded contexts
 
 **C:** Let's start by understanding the business domain. I have several questions:
 
@@ -50,7 +50,7 @@ I'll move through four phases: domain understanding, strategic design with bound
 
 ---
 
-## Phase 2: Strategic Design - Bounded Contexts (8-10 minutes)
+## Phase 2: Strategic Design - Bounded Contexts, mapping and events (8-10 minutes)
 
 **C:** Based on the domain analysis, I identify these natural bounded contexts:
 
@@ -110,7 +110,8 @@ Let me draw the context map:
 
 ---
 
-## Phase 3: Tactical Design - Rate Limiting Context Deep Dive (10-12 minutes)
+## Phase 3: Tactical Design: focus on the main Context related to the interview (10-12 minutes)
+- Rate Limiting Context Deep Dive 
 
 **C:** Let me zoom into the Rate Limiting bounded context and model the core aggregates:
 

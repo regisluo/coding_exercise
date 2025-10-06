@@ -5,7 +5,7 @@ package basic_ds.list.ds;
  * As a singly linked list, we only need a Head, and then create some operations.
  * 单链表操作最常见的方法就是，设置一个cur=head开始遍历。最常用的判断就是：
  * while(cur!=null): 遍历所有节点，每一个节点都检查或操作一下, 就用这个. 最后跳出循环，cur=null。
- * while(cur.next!=null): 目的是找到最后一个一个结点, 跳出循环, cur在最后的节点.
+ * while(cur.next!=null): 目的是找到最后一个一个结点, 跳出循环, cur就停在最后一个节点.
  *
  * 上面两个条件，根据情况，灵活处理
  */

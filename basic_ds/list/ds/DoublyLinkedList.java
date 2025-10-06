@@ -1,5 +1,11 @@
 package basic_ds.list.ds;
 
+/**
+ * Doubly linked list implementation.
+ * Normally it has a <b>head</b> pointer and a size variable.
+ * But if needed, it can also have a <b>tail<b/> pointer.
+ * It supports add, delete, size, display operations.
+ */
 public class DoublyLinkedList {
     private DoubleNode head;
     public int size;
@@ -95,12 +101,7 @@ public class DoublyLinkedList {
         list.delete(3);
         list.delete(6);
         list.display();
-
         list.delete(1);
         list.display();
-
-
     }
-
-
 }
