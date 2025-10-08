@@ -1,6 +1,6 @@
 package practice.leetcode.seventyfive75;
 
-public class MergeAlternately_1768 {
+public class String_MergeAlternately_1768 {
     public String mergeAlternately(String word1, String word2) {
         // edge cases
         if(word1==null) {
