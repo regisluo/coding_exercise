@@ -1,0 +1,17 @@
+## **SAMPLE PROBLEMS BY DIFFICULTY**
+
+### **Senior Engineer Level:**
+- **Distributed Cache System** (Redis/Memcached alternative)
+- **Real-time Chat System** (Slack/Discord-like)
+- **Content Delivery Network** (CDN design)
+- **Search Engine** (Elasticsearch alternative)
+- **Notification System** (Push notifications at scale)
+
+### **Staff/Principal Level:**
+- **Global Database System** (Distributed SQL database)
+- **Service Mesh Architecture** (Istio/Linkerd alternative)
+- **Real-time Analytics Platform** (Real-time data processing)
+- **Multi-tenant SaaS Platform** (Complex isolation and scaling)
+- **Payment Processing System** (Financial transaction handling)
+
+---

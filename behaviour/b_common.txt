@@ -1,0 +1,5 @@
+this is a file to give LLM instructions about how to answer behaviour questions in this common folder.
+
+all the files in this folder are not questions, but common knowledges and rules, best practices for the behaviour questions.
+
+You should give me concepts, flows, practices, trade-offs, pros and cons, and so on.

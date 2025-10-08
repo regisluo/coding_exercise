@@ -1,0 +1,5 @@
+this is a file to give LLM instructions about how to answer common system design knowledges in this common folder.
+
+all the files in this folder are not questions, but common knowledges that can be used in different system design questions.
+
+You should give me concepts, definitions, components, considerations, trade-offs, pros and cons, diagrams if possible, and so on.
