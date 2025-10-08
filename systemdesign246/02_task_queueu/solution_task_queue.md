@@ -1,424 +1,296 @@
 # System Design Interview: Distributed Task Queue System
 
-**Question:** Design a distributed task queue system that can handle millions of tasks per day, ensuring reliable task execution, proper retry mechanisms, and scalability across multiple workers and regions.
+**Question:** Design a distributed task queue system that can handle high throughput and low latency for processing tasks. Discuss the considerations and components that would be necessary to implement such a system effectively.
 
 ---
 
 ## Mock Interview Dialogue
 
-**Interviewer (I):** Today we're designing a distributed task queue system. Think of something like Celery, Amazon SQS, or Google Cloud Tasks. The system should handle millions of tasks per day with reliable execution and proper scaling. You have 45 minutes. Please walk me through your approach.
+**Interviewer (I):** Today we'll be designing a distributed task queue system. The system needs to handle high throughput and low latency for processing tasks. Can you walk me through your approach to solving this problem?
 
 **Candidate (C):** Thank you for the interesting problem. I'll approach this systematically using a four-phase structure: understanding the problem and establishing design scope, high-level design with typical use cases, detailed design focusing on key components, and finally wrap-up with trade-offs and future improvements. Let me start by clarifying the requirements.
 
 ---
 
-## **PHASE 1: UNDERSTAND THE PROBLEM AND REQUIREMENTS (3-5 minutes)**
+## Phase 1: Understand the Problem and Requirements (3-5 minutes)
 
 **C:** Let me start by understanding the core requirements and constraints:
 
 **Functional Requirements (Who, What, Whom, Where):**
-1. **Who** are the actors using this task queue system? (application services, background workers, admin dashboards, monitoring systems)
-2. **What** core operations does the system need to support? (task submission, task execution, retry logic, task scheduling, priority handling)
-3. **Whom/What** are these operations performed on? (background jobs, batch processing tasks, async operations, scheduled jobs)
-4. **Where** does this system operate? (single region, multi-region, edge locations)
-5. Are there different types of tasks with varying priorities and execution requirements?
-6. What integrations with external systems are required for task execution?
+
+**I:** Good approach. Let's clarify the requirements.
+
+**C:** 
+1. **Who** are the actors using this system? I assume we have task producers (applications, services, users) who submit tasks, and consumers (worker nodes) that process them. Also administrators who monitor and manage the system.
+
+2. **What** core operations does the system need to support? 
+   - Task submission and queuing
+   - Task scheduling and execution
+   - Task status tracking and monitoring
+   - Task retry mechanisms
+   - Task prioritization
+
+3. **Whom/What** are these operations performed on?
+   - Tasks with different types (email sending, image processing, data analysis)
+   - Task metadata (priority, retry count, timestamps)
+
+4. **Where** does this system operate? Is this a global system or region-specific?
+
+**I:** Let's assume it's a global system supporting multiple regions. What about specific business requirements?
+
+**C:** Great. Some additional clarification questions:
+- Do tasks have different priorities? Should high-priority tasks be processed first?
+- What's the expected task failure rate and retry policy?
+- Do we need scheduled tasks (delayed execution)?
+- Should tasks support dependencies (task A must complete before task B)?
+- What's the required task durability guarantee?
+
+**I:** Yes to priorities and retries. Let's keep it simple - no dependencies or complex scheduling for now. Tasks should be durable and not lost.
 
 **Non-Functional Requirements (Performance, Monitoring, Failures, Security):**
-7. **Performance & Tuning**: What are the expected task throughput and latency requirements for task processing?
-8. **Monitoring & Alerting**: What metrics are critical - task success rates, queue depths, worker health, processing latencies?
-9. **Failure Scenarios**: How should the system handle worker failures, task timeouts, and poison messages?
-10. **Security**: What are the authentication requirements and how do we secure task payloads and worker access?
 
-**I:** Good questions. Let me provide context:
-- **Who**: Microservices submitting async tasks, background workers processing tasks, DevOps teams monitoring the system, and automated schedulers
-- **What**: Task submission with priority levels, reliable task execution, automatic retries with exponential backoff, delayed/scheduled tasks, dead letter queue handling
-- **Whom**: Various background jobs like image processing, email sending, data ETL pipelines, report generation, cleanup tasks
-- **Where**: Multi-region deployment (3 regions) with cross-region task distribution capability
-- Task types: High priority (real-time notifications), Medium priority (batch processing), Low priority (cleanup jobs)
-- **Performance**: Handle 10M tasks/day with peak of 5K tasks/second, task processing latency <1 second for high priority
-- **Monitoring**: Task throughput, queue depth, worker utilization, failed task rates, processing times
-- **Failures**: Workers can crash, tasks can timeout, need poison message detection and dead letter queues
-- **Security**: JWT-based task submission authentication, encrypted task payloads, worker authorization
+**C:** 
+5. **Performance & Tuning**: What are the expected load patterns?
+   - Expected QPS for task submission?
+   - Task processing latency requirements?
+   - Peak vs average load ratios?
 
-**C:** Perfect. Based on your context, let me establish some performance and operational targets:
+**I:** Let's target 100K tasks per second submission rate, with P99 processing latency under 100ms for high-priority tasks.
 
-**Performance Analysis:**
-- For 10M tasks/day with 5K TPS peak, need horizontally scalable worker pools
-- Task processing latency target: <1s for high priority, <10s for medium, <60s for low priority
-- Queue depth monitoring to prevent memory overflow and ensure timely processing
+**C:** 
+6. **Monitoring & Alerting**: We'll need metrics for queue depths, processing rates, worker health, and latency percentiles.
 
-**Operational Requirements:**
-- Monitor queue depths per priority level and alert on backlog buildup
-- Track task success/failure rates and identify poison message patterns
-- Implement graceful worker scaling based on queue depth and processing times
+7. **Failure Scenarios**: Main concerns are worker node failures, queue service failures, and network partitions.
 
-Let me establish the design scope:
+8. **Security**: Authentication for task submission, authorization for different task types, and encryption for sensitive task data.
 
-**In Scope:**
-- Distributed task queue with priority levels
-- Reliable task execution with retry mechanisms
-- Worker auto-scaling and load balancing
-- Dead letter queue for failed tasks
-- Cross-region task distribution
-- Real-time monitoring and alerting
-
-**Out of Scope (for this interview):**
-- Complex workflow orchestration (DAGs)
-- Task scheduling with cron-like functionality
-- Real-time streaming task processing
-
-**Key Assumptions:**
-- Tasks are mostly independent (minimal dependencies)
-- Average task execution time: 2-5 seconds
-- 80/20 rule: 20% of task types generate 80% of volume
-- Acceptable task loss rate: <0.01% with proper retry mechanisms
-
-### **Simple Back-of-Envelope Calculations:**
+**Simple Back-of-Envelope Calculations:**
 
 **C:** Let me do some quick capacity estimation:
 
 **Scale Estimates:**
-- Daily tasks: 10M tasks/day
-- Average TPS: 10M / (24 * 3600) ≈ 116 TPS
-- Peak TPS: 5K TPS (roughly 43x average)
-- Task payload size: ~1KB average
-- Daily storage: 10M * 1KB = 10GB/day
-- Storage (30 days retention): 300GB
-- Worker memory per task: ~10MB during processing
-- Concurrent tasks at peak: 5K * 3s avg execution = 15K concurrent tasks
-
-**Key Numbers:**
-- Need worker pools capable of handling 15K concurrent tasks
-- Queue storage should handle 10GB daily throughput
-- Network bandwidth: 5K TPS * 1KB = 5MB/s peak
+- Task submission: 100K/second = 8.64B tasks/day
+- Assuming average task size of 1KB: 8.64TB/day storage
+- With 30-day retention: ~260TB total storage
+- Peak load (3x average): 300K/second submission rate
+- Worker capacity: If average processing time is 10ms, each worker handles 100 tasks/second
+- For 100K TPS, we need ~1000 active workers
 
 ---
 
-## **PHASE 2: HIGH-LEVEL DESIGN (10-15 minutes)**
+## Phase 2: High-Level Design (10-15 minutes)
 
 **C:** Let me propose a high-level architecture:
 
 **System Architecture Diagram:**
+
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Producer   │────│Load Balancer│────│  Queue API  │
-│  Services   │    │             │    │  Gateway    │
+│  Producers  │────│Load Balancer│────│ API Gateway │
+│(Apps/Users) │    │             │    │             │
 └─────────────┘    └─────────────┘    └─────────────┘
                                               │
                                               ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Message     │────│ Task Queue  │────│  Worker     │
-│ Broker      │    │ Manager     │    │  Pools      │
-│ (Kafka)     │    │             │    │             │
+│   Cache     │────│Task Manager │────│Priority     │
+│  (Redis)    │    │  Service    │    │Queues       │
 └─────────────┘    └─────────────┘    └─────────────┘
-        │                  │                  │
-        ▼                  ▼                  ▼
+                                              │
+                                              ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Dead Letter │    │ Task        │    │ Worker      │
-│ Queue       │    │ Metadata DB │    │ Registry    │
+│  Database   │────│Worker Pool  │────│Result Store │
+│ (Metadata)  │    │Manager      │    │             │
 └─────────────┘    └─────────────┘    └─────────────┘
 ```
 
 **Core Components:**
-1. **Queue API Gateway**: Task submission endpoint with authentication and validation
-2. **Message Broker**: Kafka for durable task storage and distribution with partitioning
-3. **Task Queue Manager**: Orchestrates task routing, retry logic, and worker assignment
-4. **Worker Pools**: Auto-scaling groups of workers organized by task type and priority
-5. **Worker Registry**: Service discovery and health monitoring for active workers
-6. **Task Metadata DB**: PostgreSQL for task state, retry counts, and execution history
+1. **Load Balancer**: Distributes incoming requests using round-robin with health checks
+2. **API Gateway**: Rate limiting, authentication, request routing
+3. **Task Manager Service**: Core business logic for task lifecycle management
+4. **Priority Queues**: Multiple queues (high, medium, low priority) using message brokers
+5. **Worker Pool Manager**: Auto-scaling worker management with health monitoring
+6. **Database**: Task metadata, worker status, and system configuration
+7. **Cache**: Fast access to frequently accessed task status and worker information
 
-### **API Design:**
+**I:** How do you handle the message queues? What technology would you use?
 
-**C:** Here are the key APIs:
+**C:** For the priority queues, I'd use Apache Kafka or Amazon SQS with multiple topics/queues for different priorities. Kafka provides high throughput and durability, while SQS offers managed simplicity.
 
-**Core Endpoints:**
-```
-// Task submission
-POST /api/v1/tasks
-{
-  "task_type": "image_processing",
-  "priority": "high",
-  "payload": {...},
-  "retry_policy": {
-    "max_retries": 3,
-    "backoff_multiplier": 2
-  },
-  "delay_seconds": 0
-}
+**Typical Use Case Walkthrough:**
 
-Response: 201 Created
-{
-  "task_id": "uuid-123",
-  "status": "queued",
-  "estimated_execution_time": "2023-10-08T10:35:00Z"
-}
+**C:** Let me walk through a typical task submission and processing workflow:
 
-// Task status check
-GET /api/v1/tasks/{task_id}
-Response: 200 OK
-{
-  "task_id": "uuid-123",
-  "status": "completed",
-  "result": {...},
-  "execution_time_ms": 2500,
-  "retry_count": 0
-}
-
-// Worker registration (internal)
-POST /internal/workers/register
-{
-  "worker_id": "worker-456",
-  "task_types": ["image_processing", "email_sending"],
-  "capacity": 10,
-  "region": "us-west-2"
-}
-```
-
-### **Typical Use Case Walkthrough:**
-
-**C:** Let me walk through a typical task processing workflow:
-
-**Scenario**: A user uploads an image that needs to be processed for thumbnail generation
+**Scenario**: A web application submits an image processing task
 
 **Step-by-step flow:**
-1. Image service uploads file → submits task via POST /api/v1/tasks
-2. Queue API Gateway validates request and assigns task_id
-3. Task metadata stored in PostgreSQL with status "queued"
-4. Task published to appropriate Kafka partition (based on priority and type)
-5. Task Queue Manager routes task to available worker in the correct pool
-6. Worker pulls task, updates status to "processing", and begins execution
-7. Worker processes image, generates thumbnails, uploads to storage
-8. Worker updates task status to "completed" with execution results
-9. Task completion event published for any downstream consumers
-10. Success metrics updated and monitoring alerts cleared
+1. Producer submits task → API Gateway receives POST /tasks request
+2. Load balancer routes to available Task Manager instance
+3. Task Manager validates task, assigns priority, generates unique task ID
+4. Task metadata stored in database, task payload sent to appropriate priority queue
+5. Worker Pool Manager assigns available worker from the pool
+6. Worker polls queue, receives task, updates status to "processing"
+7. Worker executes task (image processing), updates progress periodically
+8. On completion, worker updates task status and stores result
+9. Optional notification sent to producer about completion
+10. Worker becomes available for next task
 
 **Performance Characteristics:**
-- Expected latency: 1-3 seconds for high priority image processing tasks
-- Queue depth: <1000 tasks per partition under normal load
-- Worker utilization: 70-80% average with auto-scaling headroom
+- Expected latency: <50ms for task submission, <100ms P99 for high-priority processing
+- Cache hit ratio: 90% for task status queries
+- Database queries: 2-3 per task (create, update status, completion)
 
-**I:** What happens if a worker crashes during task execution?
+**I:** What happens if a worker crashes during task processing?
 
-**C:** Great question. For worker failure scenarios, we have several safety mechanisms:
-
-1. **Heartbeat Monitoring**: Workers send heartbeats every 30 seconds; missed heartbeats trigger task reassignment
-2. **Task Timeouts**: Each task has a maximum execution time; timeouts trigger automatic retry
-3. **Graceful Shutdown**: Workers finish current tasks before shutting down during deployments
-4. **Task Leasing**: Tasks are "leased" to workers with TTL; expired leases allow task reassignment
-5. **Dead Letter Queue**: After max retries, failed tasks move to DLQ for manual investigation
-
-**I:** How do you handle different task priorities efficiently?
-
-**C:** For priority handling, I implement a multi-level approach:
-
-1. **Separate Kafka Topics**: High, medium, low priority topics with different consumer configurations
-2. **Dedicated Worker Pools**: High priority pools with more resources and faster scaling
-3. **Weighted Fair Queuing**: Workers poll high priority queues more frequently (80% high, 15% medium, 5% low)
-4. **Resource Reservation**: Reserve 20% of worker capacity exclusively for high priority tasks
-5. **Priority Preemption**: Critical tasks can interrupt low priority work with proper cleanup
+**C:** Good question. For worker failure, we implement:
+- Heartbeat mechanism: Workers send periodic heartbeats to Worker Pool Manager
+- Task timeout: If no heartbeat received within threshold, task is marked as failed
+- Automatic retry: Task is requeued with incremented retry count
+- Dead letter queue: After max retries, tasks go to dead letter queue for manual investigation
 
 ---
 
-## **PHASE 3: DETAILED DESIGN (10-20 minutes)**
+## Phase 3: Detailed Design (10-20 minutes)
 
-**C:** Let me focus on the core task processing engine and scaling mechanisms:
+**I:** Let's dive deeper into the queue management and worker scaling. How do you handle different priorities effectively?
 
-### **Performance & Scalability Focus**
+**C:** Great question. Let me detail the priority handling and worker scaling mechanisms:
 
-**Task Processing Engine Design:**
-
-1. **Message Broker Architecture (Kafka)**:
+**Priority Queue Management:**
 ```
-Topic Structure:
-tasks.high.image_processing    (3 partitions, 3 replicas)
-tasks.high.email_sending      (3 partitions, 3 replicas)
-tasks.medium.batch_processing (6 partitions, 3 replicas)
-tasks.low.cleanup             (3 partitions, 2 replicas)
-
-Key Benefits:
-- Partition by task_type for parallel processing
-- Replication for durability
-- Consumer groups for load balancing
+High Priority Queue    → Weight: 70% of workers
+Medium Priority Queue  → Weight: 25% of workers  
+Low Priority Queue     → Weight: 5% of workers
 ```
 
-2. **Worker Pool Management**:
-```
-High Priority Pool:
-- Min workers: 50
-- Max workers: 500
-- Scale up trigger: Queue depth > 100 OR avg latency > 2s
-- Scale down trigger: Queue depth < 10 AND avg latency < 1s
+**Worker Allocation Strategy:**
+- Dynamic worker allocation based on queue depth and priority
+- Workers can switch between queues based on demand
+- High-priority queue gets guaranteed minimum worker allocation
+- Starving prevention for low-priority tasks
 
-Medium Priority Pool:
-- Min workers: 20
-- Max workers: 200
-- Scale triggers based on queue depth and processing time
-
-Worker Health Monitoring:
-- Heartbeat interval: 30s
-- Task timeout: 5 minutes
-- Max concurrent tasks per worker: 5
+**Auto-scaling Logic:**
+```python
+# Simplified scaling algorithm
+if queue_depth > threshold_high:
+    scale_out(target_workers = queue_depth / target_tasks_per_worker)
+elif queue_depth < threshold_low and current_workers > min_workers:
+    scale_in(target_workers = max(min_workers, queue_depth / target_tasks_per_worker))
 ```
 
-3. **Retry and Dead Letter Queue Logic**:
-```
-Retry Policy:
-- Initial delay: 1s
-- Exponential backoff: delay = base_delay * (2^retry_count)
-- Max delay: 300s
-- Jitter: ±20% to prevent thundering herd
+**I:** How do you ensure exactly-once processing?
 
-Dead Letter Queue Criteria:
-- Max retries exceeded (default: 5)
-- Poison message detection (consistent parse failures)
-- Task timeout exceeded multiple times
-- Worker reporting task as non-retryable
-```
+**C:** Excellent question. For exactly-once processing:
 
-**Database Schema for Task Metadata:**
+**Idempotency Design:**
+1. **Task Deduplication**: Use content-based hash as task ID to detect duplicates
+2. **Worker State Management**: 
+   - Task status: PENDING → PROCESSING → COMPLETED/FAILED
+   - Use distributed locks (Redis/Zookeeper) during processing
+3. **Result Idempotency**: Store processing results with task ID to handle duplicate completions
+
+**Database Schema Design:**
 ```sql
+-- Tasks table
 CREATE TABLE tasks (
-    task_id UUID PRIMARY KEY,
-    task_type VARCHAR(100) NOT NULL,
-    priority VARCHAR(20) NOT NULL,
-    status VARCHAR(50) NOT NULL,
-    payload JSONB NOT NULL,
-    retry_count INTEGER DEFAULT 0,
-    max_retries INTEGER DEFAULT 3,
-    created_at TIMESTAMP DEFAULT NOW(),
-    scheduled_at TIMESTAMP DEFAULT NOW(),
-    started_at TIMESTAMP,
-    completed_at TIMESTAMP,
-    worker_id VARCHAR(100),
-    error_message TEXT,
-    execution_time_ms INTEGER,
-    
-    INDEX(status, priority, created_at),
-    INDEX(task_type, status),
-    INDEX(scheduled_at) WHERE status = 'scheduled'
+    task_id VARCHAR(64) PRIMARY KEY,
+    content_hash VARCHAR(64) UNIQUE,
+    priority ENUM('HIGH', 'MEDIUM', 'LOW'),
+    status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'),
+    retry_count INT DEFAULT 0,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    worker_id VARCHAR(64),
+    result_location VARCHAR(256)
 );
 
-CREATE TABLE worker_registry (
-    worker_id VARCHAR(100) PRIMARY KEY,
-    task_types TEXT[] NOT NULL,
-    capacity INTEGER NOT NULL,
-    current_load INTEGER DEFAULT 0,
-    region VARCHAR(50) NOT NULL,
-    last_heartbeat TIMESTAMP DEFAULT NOW(),
-    status VARCHAR(20) DEFAULT 'active',
-    
-    INDEX(status, last_heartbeat),
-    INDEX(region, task_types)
+-- Workers table  
+CREATE TABLE workers (
+    worker_id VARCHAR(64) PRIMARY KEY,
+    status ENUM('ACTIVE', 'BUSY', 'INACTIVE'),
+    last_heartbeat TIMESTAMP,
+    current_task_id VARCHAR(64),
+    capabilities JSON
 );
 ```
 
-**Load Testing Results** (estimated):
-- Current capacity: 8K TPS sustained with 3-region deployment
-- Breaking point: 12K TPS before worker pool saturation
-- Scaling headroom: 2.5x with current auto-scaling configuration
+**I:** What about monitoring and alerting?
 
-**I:** How do you ensure tasks aren't lost during system failures?
+**C:** Comprehensive monitoring is crucial for a distributed task queue:
 
-**C:** For durability and reliability, I implement multiple layers of protection:
+**Key Metrics:**
+1. **Throughput Metrics**: Tasks submitted/processed per second
+2. **Latency Metrics**: P50/P90/P99 processing time, queue wait time
+3. **Queue Health**: Queue depth by priority, age of oldest task
+4. **Worker Metrics**: Worker utilization, failure rates, heartbeat status
+5. **System Health**: Database connections, message broker lag, memory usage
 
-1. **Kafka Persistence**: Messages persisted to disk with configurable retention (7 days default)
-2. **At-Least-Once Delivery**: Tasks can be processed multiple times; workers must be idempotent
-3. **Transaction Log**: All task state changes logged in PostgreSQL with ACID guarantees
-4. **Cross-Region Replication**: Critical tasks replicated across regions for disaster recovery
-5. **Backup Processing**: Failed region tasks automatically redistributed to healthy regions
+**Alerting Strategy:**
+- Queue depth > threshold for >5 minutes
+- Worker failure rate > 5%
+- P99 latency > SLA threshold
+- Dead letter queue accumulation
+- Database/cache connection failures
 
-### **Service Architecture Focus**
+**I:** How would you handle a message broker failure?
 
-**Microservices Breakdown:**
-1. **Queue API Service**:
-   - Domain: Task submission and status queries
-   - APIs: /tasks (POST, GET), /tasks/{id} (GET, DELETE)
-   - Data: Request validation, task metadata
+**C:** For message broker failure resilience:
 
-2. **Task Manager Service**:
-   - Domain: Task orchestration and lifecycle management
-   - APIs: Internal task routing and retry logic
-   - Data: Task state transitions, retry policies
+**Multi-AZ Deployment:**
+- Deploy Kafka/SQS across multiple availability zones
+- Automatic failover to healthy brokers
+- Replication factor of 3 for durability
 
-3. **Worker Management Service**:
-   - Domain: Worker registration, health monitoring, and load balancing
-   - APIs: /workers (register, heartbeat, status)
-   - Data: Worker registry, capacity tracking
-
-4. **Dead Letter Queue Service**:
-   - Domain: Failed task analysis and recovery
-   - APIs: /dlq (list, retry, delete)
-   - Data: Failed task storage and investigation tools
-
-**Service Communication:**
-- **Synchronous**: gRPC for worker registration and health checks
-- **Asynchronous**: Kafka for task distribution and status updates
-- **Data Consistency**: Eventually consistent across services, strongly consistent within service boundaries
+**Graceful Degradation:**
+- Task Manager buffers tasks temporarily during broker outage
+- Workers implement exponential backoff for queue polling
+- Circuit breaker pattern to prevent cascade failures
+- Alternative queue backends for critical tasks
 
 ---
 
-## **PHASE 4: WRAP-UP AND SUMMARY (3-5 minutes)**
+## Phase 4: Wrap-up and Trade-offs (5 minutes)
 
-**C:** Let me summarize the key aspects of this design:
+**C:** Let me summarize the key trade-offs and potential improvements:
 
-**Architecture Summary:**
-We've designed a distributed task queue system that supports 10M daily tasks with 5K TPS peak capacity. The architecture uses Kafka for durable message storage, auto-scaling worker pools for processing, and PostgreSQL for task metadata and state management.
+**Current Design Trade-offs:**
 
-**Key Design Decisions:**
-1. **Kafka for Message Broker**: Chose Kafka over Redis/RabbitMQ for higher throughput, durability, and partition-based scaling
-2. **Separate Worker Pools by Priority**: Implemented dedicated pools to ensure high priority tasks get guaranteed resources
-3. **Database for Task Metadata**: Selected PostgreSQL for ACID compliance and complex query support for monitoring
+| Aspect | Choice | Trade-off |
+|--------|--------|-----------|
+| **Consistency** | Eventual consistency | Better performance vs immediate consistency |
+| **Queue Technology** | Kafka | High throughput vs operational complexity |
+| **Worker Management** | Auto-scaling | Cost efficiency vs cold start latency |
+| **Storage** | Separate metadata/payload | Query performance vs storage complexity |
 
-**Trade-offs Made:**
-1. **Consistency vs Performance**: Chose at-least-once delivery accepting potential duplicate processing for higher throughput
-2. **Cost vs Reliability**: Opted for cross-region replication (higher cost) for disaster recovery requirements
-3. **Complexity vs Flexibility**: Selected microservices architecture over monolith for independent scaling and evolution
+**Potential Issues and Mitigations:**
+1. **Hot Partitions**: Use consistent hashing for task distribution
+2. **Memory Leaks**: Implement worker restart policies and memory monitoring
+3. **Poison Messages**: Dead letter queues with manual investigation workflows
+4. **Network Partitions**: Implement jitter in retry mechanisms
 
-**System Characteristics:**
-- **Scalability**: Supports 10M daily tasks with auto-scaling worker pools handling 8K sustained TPS
-- **Reliability**: Achieves 99.99% task completion rate through retries, DLQ, and cross-region replication
-- **Performance**: Delivers <1s processing latency for high priority tasks under normal load
-- **Maintainability**: Microservices enable independent deployment and technology evolution
+**Future Enhancements:**
+1. **Task Dependencies**: DAG-based task orchestration for complex workflows
+2. **Streaming Processing**: Real-time task processing for ultra-low latency requirements
+3. **Multi-tenant Support**: Isolated queues and worker pools per tenant
+4. **Advanced Scheduling**: Cron-like scheduling and delayed task execution
+5. **Machine Learning**: Predictive scaling based on historical patterns
 
-### **Future Improvements:**
+**I:** This is a solid design. How would you approach the initial rollout?
 
-**C:** Areas for future enhancement:
+**C:** For initial rollout, I'd recommend:
 
-**Short-term (3-6 months):**
-- Machine learning for optimal worker pool sizing based on historical patterns
-- Task dependency management for simple workflow support
-- Enhanced monitoring with custom business metrics and alerting
+1. **Phase 1**: Deploy with basic priority queues and manual scaling
+2. **Phase 2**: Add auto-scaling and advanced monitoring
+3. **Phase 3**: Implement cross-region replication and disaster recovery
+4. **Phase 4**: Add advanced features like dependencies and ML-based scaling
 
-**Medium-term (6-12 months):**
-- Multi-tenancy support with resource isolation and quotas
-- Task batching for improved efficiency in bulk operations
-- Geographic task routing based on data locality
+**Deployment Strategy:**
+- Blue-green deployment for zero-downtime updates
+- Feature flags for gradual rollout of new capabilities
+- Comprehensive load testing before production deployment
+- Canary deployment for high-risk changes
 
-**Long-term (1+ years):**
-- Serverless worker execution for cost optimization
-- Advanced workflow orchestration with DAG support
-- Real-time task analytics and predictive scaling
+This design provides a robust foundation for a distributed task queue system that can handle high throughput and low latency while maintaining reliability and scalability.
 
-**Risk Mitigation Priorities:**
-1. **Kafka Cluster Failure** → Implement cross-region Kafka replication and automated failover
-2. **Poison Message Handling** → Enhanced detection algorithms and automated quarantine
-3. **Worker Pool Exhaustion** → Predictive scaling and circuit breakers for overload protection
+**I:** Excellent work. Thank you for the comprehensive design.
 
-**C:** This design balances reliability requirements with performance needs while providing clear scaling paths for future growth. The event-driven architecture ensures loose coupling between components and enables independent evolution of the system.
-
-I'm confident this solution addresses the core requirements for handling 10M daily tasks with proper reliability, monitoring, and scaling capabilities. I'm happy to dive deeper into specific areas like the retry algorithms, cross-region failover strategies, or worker auto-scaling policies.
-
-**I:** What's the biggest operational challenge with this design?
-
-**C:** The biggest operational challenge is **managing task backlog during traffic spikes while maintaining SLAs**. During peak periods, high priority tasks might get delayed behind medium/low priority backlogs.
-
-I'd address this through:
-
-1. **Predictive Auto-scaling**: Use historical patterns and leading indicators (like user activity) to pre-scale worker pools
-2. **Admission Control**: Temporarily reject low priority tasks during extreme load to protect high priority SLAs
-3. **Circuit Breaker Integration**: Implement backpressure mechanisms to prevent cascade failures from overwhelming the queue
-4. **Multi-Region Load Shedding**: Automatically distribute excess load across regions based on capacity
-5. **Real-time SLA Monitoring**: Alert and take corrective action when priority task latencies approach SLA thresholds
-
-The key is building operational runbooks and automated responses for common scenarios rather than relying on manual intervention during incidents.
+**C:** Thank you! I enjoyed working through this distributed systems problem and considering the various trade-offs involved in building a production-ready task queue system.
