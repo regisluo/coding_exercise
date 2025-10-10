@@ -1,0 +1,3 @@
+Problem:
+Design a system with the given api that can perform recursive image fetching.
+The system should be able to send requests to recognize objects, where
