@@ -1,4 +1,4 @@
-package basic_ds.stack.ds;
+package basic_ds.stack;
 
 import basic_ds.list.ds.DoubleNode;
 

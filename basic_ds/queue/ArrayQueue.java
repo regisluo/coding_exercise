@@ -1,4 +1,4 @@
-package basic_ds.queueu.ds;
+package basic_ds.queue;
 
 public class ArrayQueue {
     int[] data;

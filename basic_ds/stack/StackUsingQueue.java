@@ -1,6 +1,4 @@
-package basic_ds.stack.ds;
-
-import basic_ds.queueu.ds.ArrayQueue;
+package basic_ds.stack;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
