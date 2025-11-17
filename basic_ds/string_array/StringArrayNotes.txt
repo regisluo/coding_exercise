@@ -1,5 +1,5 @@
 - String can be converted to char array: s.toCharArray()
-- any char is inter-changeable with an int
+- any char is inter-changeable with an int: A is 65, a is 97
 - letter statistic: using a 128 size-char-array to count (0-127 ASCII)
 - String is immutable, so any operation on it creates a new String
 - StringBuilder is mutable, so it is more efficient for string manipulation
