@@ -20,19 +20,26 @@ public class IterativeTraversal {
         }
     }
 
+    // l, node, r
+    // each of the node will be visited once so time complexity is O(n)
     public void inOrder(BinaryTreeNode root) {
-        Deque<BinaryTreeNode> stack = new ArrayDeque<>();
         BinaryTreeNode cur = root;
-        while (cur != null) {
+        Deque<BinaryTreeNode> stack = new ArrayDeque<>();
+
+        //for each of sub-tree, apply the same logic
+        while (cur != null || !stack.isEmpty()) {
             // find the bottom-left node
-            if (cur != null || !stack.isEmpty()) {
+            while (cur != null) {
                 stack.push(cur);
                 cur = cur.left;
-            } else {
-                cur = stack.pop();
-                cur.visit();
-                cur = cur.right;
             }
+
+            // visit the left node
+            cur = stack.pop();
+            cur.visit();
+
+            // go to the right-subTree
+            cur = cur.right;
         }
     }
 
