@@ -27,4 +27,17 @@ public class Temp {
         Integer peekFirst = deque.peekFirst();
         Integer peekLast = deque.peekLast();
     }
+
+    public void level(BinaryTreeNode node){
+        if(node==null) {
+            reutrn;
+        }
+
+        Queue<BinaryTreeNode> queue = new LinkedList<>();
+        queue.offer(node);
+        while(!queue.isEmpty()) {
+            BinaryTreeNode cur = queue.poll();
+            if
+        }
+    }
 }

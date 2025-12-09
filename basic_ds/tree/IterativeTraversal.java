@@ -10,12 +10,12 @@ public class IterativeTraversal {
     public void preOrderIterative(BinaryTreeNode root) {
         if (root != null) {
             Deque<BinaryTreeNode> stack = new ArrayDeque<>();
-            stack.push(root);
+            stack.push(root); // push head first
             while (!stack.isEmpty()) {
                 BinaryTreeNode node = stack.pop();
                 node.visit();
-                stack.push(node.right);
-                stack.push(node.left);
+                if (node.right != null) stack.push(node.right);
+                if (node.left != null) stack.push(node.left);
             }
         }
     }
@@ -55,7 +55,7 @@ public class IterativeTraversal {
         if (root != null) {
             Deque<BinaryTreeNode> tempStack = new ArrayDeque();
             Deque<BinaryTreeNode> resultStack = new ArrayDeque();
-            tempStack.push(root);
+            tempStack.push(root); // push head first
             while (!tempStack.isEmpty()) {
                 BinaryTreeNode node = tempStack.pop();
                 resultStack.push(node);
