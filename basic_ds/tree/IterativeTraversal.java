@@ -1,6 +1,5 @@
 package basic_ds.tree;
 
-import com.sun.source.tree.BinaryTree;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -46,7 +45,7 @@ public class IterativeTraversal {
     /**
      * Post order is: left-right-root, the reverse order is: root-right-left, it is similar as preOrder which is
      * root-left-right.
-     *
+     * <p>
      * So, the solution can be based on preOrder, and save the processing sequency into a stack (root-right-left),
      * after all nodes are precessed, pop the stack elements which will be left-right-root which is postOrder.
      */
