@@ -1,7 +1,6 @@
-package basic_ds.tree;
+package practice.tixi.binarytree;
 
-import java.util.ArrayList;
-import java.util.List;
+import basic_ds.tree.BinaryTreeNode;
 
 /**
  * Recursive solution:

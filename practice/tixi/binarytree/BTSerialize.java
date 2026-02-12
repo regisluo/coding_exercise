@@ -1,4 +1,7 @@
-package basic_ds.tree;
+package practice.tixi.binarytree;
+
+import basic_ds.tree.BinaryTreeNode;
+
 import java.util.LinkedList;
 import java.util.Queue;
 

@@ -1,4 +1,4 @@
-package basic_ds.tree;
+package practice.tixi.binarytree;
 
 import java.util.List;
 

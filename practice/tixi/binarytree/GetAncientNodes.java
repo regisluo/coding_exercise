@@ -1,4 +1,6 @@
-package basic_ds.tree;
+package practice.tixi.binarytree;
+
+import basic_ds.tree.BinaryTreeNode;
 
 import java.util.List;
 
@@ -15,8 +17,8 @@ import java.util.List;
 public class GetAncientNodes {
 
     public List<BinaryTreeNode> getAncientNodes(
-        BinaryTreeNode root,
-        BinaryTreeNode node
+            BinaryTreeNode root,
+            BinaryTreeNode node
     ) {
         return null;
     }
