@@ -1,4 +1,4 @@
-package practice.leetcode.seventyfive75;
+package practice.leetcode.seventyfive75.arraystring;
 
 public class String_Common_Divisor_1071 {
     /**

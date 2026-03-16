@@ -32,11 +32,9 @@ public class IterativeTraversal {
                 stack.push(cur);
                 cur = cur.left;
             }
-
             // visit the left node
             cur = stack.pop();
             cur.visit();
-
             // go to the right-subTree
             cur = cur.right;
         }
@@ -57,7 +55,7 @@ public class IterativeTraversal {
             tempStack.push(root); // push head first
             while (!tempStack.isEmpty()) {
                 BinaryTreeNode node = tempStack.pop();
-                resultStack.push(node);
+                resultStack.push(node); // process root
                 tempStack.push(node.left);
                 tempStack.push(node.right);
             }

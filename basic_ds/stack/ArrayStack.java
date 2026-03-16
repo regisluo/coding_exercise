@@ -2,8 +2,8 @@ package basic_ds.stack;
 
 public class ArrayStack {
     int[] data;
-    int size;
-    int capacity;
+    int size; // the current element number
+    int capacity; // the max element the stack can store
     int top = -1; // index pointing to the top element of the stack
 
     public ArrayStack(int capacity) {
@@ -12,6 +12,7 @@ public class ArrayStack {
         this.data = new int[this.capacity];
         this.size = 0; // initial count of elements in the stack
     }
+
     // return the top
     public int pop() throws Exception {
         if (this.size == 0) {
@@ -32,7 +33,7 @@ public class ArrayStack {
 
     // add element v into the Stack, return
     public void push(int v) throws Exception {
-        if(this.size == this.capacity) {
+        if (this.size == this.capacity) {
             throw new Exception("Stack is full");
         }
         this.top++;
@@ -40,11 +41,11 @@ public class ArrayStack {
         this.data[top] = v;
     }
 
-    public int size(){
+    public int size() {
         return this.size;
     }
 
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return this.size == 0;
     }
 }

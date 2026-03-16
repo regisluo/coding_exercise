@@ -1,14 +1,10 @@
-package practice.leetcode.seventyfive75;
-
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Stack;
+package practice.leetcode.seventyfive75.arraystring;
 
 /**
  * You are given a string s, which contains stars *.
- *
+ * <p>
  * In one operation, you can:
- *
+ * <p>
  * Choose a star in s.
  * Remove the closest non-star character to its left, as well as remove the star itself.
  * Return the string after all stars have been removed.
@@ -16,9 +12,9 @@ import java.util.Stack;
 
 public class Stack_RemovingStarsfromString_2390 {
     public String removeStars(String s) {
-        StringBuilder sb= new StringBuilder();
-        for(var i:s.toCharArray())
-            if(i=='*') sb.deleteCharAt(sb.length() - 1);
+        StringBuilder sb = new StringBuilder();
+        for (var i : s.toCharArray())
+            if (i == '*') sb.deleteCharAt(sb.length() - 1);
             else sb.append(i);
         return sb.toString();
     }

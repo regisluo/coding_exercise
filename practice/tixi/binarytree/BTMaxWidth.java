@@ -5,6 +5,10 @@ import basic_ds.tree.BinaryTreeNode;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * max nodes of a BT is the max of level width;
+ * level width is the number of nodes in this level
+ */
 public class BTMaxWidth {
 
     public int maxWidth(BinaryTreeNode root) {
@@ -41,5 +45,34 @@ public class BTMaxWidth {
             }
         }
         return maxWidth;
+    }
+
+    /**
+     * Based on level-traversal, the max width is the biggest
+     * queue size of a level
+     */
+    public int maxWidth2(BinaryTreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        Queue<BinaryTreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        int size = 0;
+        BinaryTreeNode cur = null;
+        int level = 1;
+        int max = 0;
+        while (!queue.isEmpty()) {
+            size = queue.size();
+            // process the current level by polling all nodes
+            for (int i = 0; i < size; i++) {
+                cur = queue.poll();
+            }
+            System.out.println(String.format("Level: %s, width:", level++, size));
+            max = Math.max(max, size);
+            // put left and right
+            if (cur.left != null) queue.offer(cur.left);
+            if (cur.right != null) queue.offer(cur.right);
+        }
+        return max;
     }
 }

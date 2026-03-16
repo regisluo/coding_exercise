@@ -1,10 +1,10 @@
-package practice.leetcode.seventyfive75;
+package practice.leetcode.seventyfive75.arraystring;
 
 public class RemoveElement_27 {
     public int removeElement(int[] nums, int val) {
-        int i=0, j=nums.length-1;
+        int i = 0, j = nums.length - 1;
         // move all val to the 'end' of the array by switching elements
-        while (i<=j) {
+        while (i <= j) {
             // find the element whose value is val
             while (nums[i] != val) i++;
             // find the element whose value is not val
@@ -16,8 +16,7 @@ public class RemoveElement_27 {
             nums[j] = tmp;
         }
 
-        int ret = i<j?i:j;
-
+        int ret = i < j ? i : j;
 
 
         return ret;

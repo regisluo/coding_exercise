@@ -7,7 +7,7 @@ package basic_ds.string_array;
  */
 public class StringMirror {
     /**
-     * Double-Pointer solution:
+     * Two-Pointer Technique:
      * one pointer form the starting of s1; the other pointer from the end of s2.
      * A straightforward way: loop s1 from 0->length-1; loop s2 from length-1->0, and
      * compare each of the character to make sure they are the same
@@ -41,12 +41,12 @@ public class StringMirror {
         }
         // reverse s2
         char[] char2 = s2.toCharArray();
-        int left=0, right=char2.length-1;
+        int left = 0, right = char2.length - 1;
         char temp;
-        while(left<right) {
+        while (left < right) {
             temp = char2[left];
-            char2[left]=char2[right];
-            char2[right]=temp;
+            char2[left] = char2[right];
+            char2[right] = temp;
             left++;
             right--;
         }
@@ -55,10 +55,10 @@ public class StringMirror {
     }
 
     public static void main(String[] args) {
-        System.out.println(isMirror1("ac", "ca")==true?"pass":"fail");
-        System.out.println(isMirror1("abc","cbad") == false?"pass":"fail");
+        System.out.println(isMirror1("ac", "ca") == true ? "pass" : "fail");
+        System.out.println(isMirror1("abc", "cbad") == false ? "pass" : "fail");
 
-        System.out.println(isMirror2("ac", "ca")==true?"pass":"fail");
-        System.out.println(isMirror2("abc","cbad") == false?"pass":"fail");
+        System.out.println(isMirror2("ac", "ca") == true ? "pass" : "fail");
+        System.out.println(isMirror2("abc", "cbad") == false ? "pass" : "fail");
     }
 }
