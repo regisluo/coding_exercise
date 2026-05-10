@@ -1,4 +1,7 @@
 package practice.designpattern;
 
-public class SerializedSingleton {
+import java.io.Serializable;
+
+public class SerializedSingleton implements Serializable {
+
 }
